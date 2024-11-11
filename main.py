@@ -1,4 +1,5 @@
 
+from asyncio.windows_events import NULL
 import pygame
 import random
 import math
@@ -17,48 +18,60 @@ foodAmount = 5
 creatureAmount = 3
 
 
+
+
 #Food and creatures will inherit from entity class
 class Entity:
   def __init__(self):
     #Spawn with a random position on the screen, 
-    self.pos = pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
+    self.pos = randomVector()
     self.speed = 0
-    self.size = 100
+    self.size = 10
     
   
   def draw(self):
-    pygame.draw.circle(surface,self.colour,self.pos,self.size/10)
+    pygame.draw.circle(surface,self.colour,self.pos,self.size)
+
 
 class Creature(Entity):
   def __init__(self):
     super().__init__()
     self.speed = 150
-    self.senseRange = 600
+    self.senseRange = 60
     self.colour = (255,255,255)
-    self.path = pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
+    self.path = randomVector()
+    self.closestFood = NULL
 
-  def pathFinding(self):
+  def update(self):
+    self.closestFood = self.getClosestFoodInRange()
+    self.updateVelocity()
+    self.updatePosition()
+    #self.updateEating()
+
+
+  def getClosestFoodInRange(self):
     smallest = math.inf
     for food in foods:
-      distance = ((self.pos.x - food.pos.x)**2 + (self.pos.y-food.pos.y)**2)**1/2
+      distance = self.pos.distance_to(food.pos)
       if distance < smallest:
         smallest = distance
-        print(smallest)
         if distance <= self.senseRange:
-          self.path = food.pos
+          return food.pos
+    return self.path
 
 
-  def updateVel(self):
+  def updateVelocity(self):
     
-    self.pathFinding()
+    self.path = self.closestFood
     #Gives new path when it reaches destination
-    if ((self.pos.x + 20 > self.path.x) and (self.pos.x - 20 < self.path.x)) and ((self.pos.y + 20 > self.path.y) and (self.pos.y - 20 < self.path.y)):
-      self.path = pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
+    if self.pos.distance_to(self.path) <=20:
+      self.path = randomVector()
     #Sets velocity in direction of path
-    self.vel = pygame.Vector2((self.path.x - self.pos.x, self.path.y - self.pos.y)).normalize()*self.speed*deltaTime
+    self.vel = (self.path - self.pos).normalize()*self.speed*deltaTime
 
-  def updatePos(self):
+  def updatePosition(self):
     self.pos += self.vel
+
 
 
 class Food(Entity):
@@ -66,6 +79,13 @@ class Food(Entity):
     super().__init__()
     self.colour = (255,255,0)
   
+
+
+
+def randomVector():
+  return pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
+
+
 
 #Initial lists
 foods = [Food() for x in range(foodAmount)]
@@ -83,8 +103,7 @@ while run:
   
   for creature in creatures:
     creature.draw()
-    creature.updateVel()
-    creature.updatePos()
+    creature.update()
     
    
 
