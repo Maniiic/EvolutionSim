@@ -1,4 +1,5 @@
 
+
 from asyncio.windows_events import NULL
 import pygame
 import random
@@ -39,15 +40,20 @@ class Creature(Entity):
     self.speed = 150
     self.senseRange = 60
     self.colour = (255,255,255)
-    self.path = randomVector()
-    self.closestFood = NULL
+    self.node = randomVector()
+
+    
+
 
   def update(self):
-    self.closestFood = self.getClosestFoodInRange()
+    foodToMove = self.getClosestFoodInRange()
+    if foodToMove != NULL:
+      self.updatePath(foodToMove)
+      #self.updateEating(foodToMove)
+    else:
+      self.path = self.node
     self.updateVelocity()
     self.updatePosition()
-    #self.updateEating()
-
 
   def getClosestFoodInRange(self):
     smallest = math.inf
@@ -56,17 +62,16 @@ class Creature(Entity):
       if distance < smallest:
         smallest = distance
         if distance <= self.senseRange:
-          return food.pos
-    return self.path
+          return food
+    return NULL
 
+  def updatePath(self, foodToMove):
+    self.path = foodToMove.pos
 
   def updateVelocity(self):
-    
-    self.path = self.closestFood
-    #Gives new path when it reaches destination
-    if self.pos.distance_to(self.path) <=20:
-      self.path = randomVector()
-    #Sets velocity in direction of path
+    if self.pos.distance_to(self.node) <= self.size:
+      self.node = randomVector()
+      
     self.vel = (self.path - self.pos).normalize()*self.speed*deltaTime
 
   def updatePosition(self):
