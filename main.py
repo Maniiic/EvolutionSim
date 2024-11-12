@@ -1,6 +1,7 @@
 
 
 from asyncio.windows_events import NULL
+from tkinter import N
 import pygame
 import random
 import math
@@ -38,7 +39,7 @@ class Creature(Entity):
   def __init__(self):
     super().__init__()
     self.speed = 150
-    self.senseRange = 60
+    self.senseRange = 100
     self.colour = (255,255,255)
     self.node = randomVector()
 
@@ -46,13 +47,13 @@ class Creature(Entity):
 
 
   def update(self):
-    self.closestFoodInRange = self.getClosestFoodInRange()
+    self.updateClosestFoodInRange()
     self.updatePath()
     self.updateEating()
     self.updateVelocity()
     self.updatePosition()
 
-  def getClosestFoodInRange(self):
+  def updateClosestFoodInRange(self):
     closestFood = NULL
     smallest = math.inf
     for food in foods:
@@ -61,7 +62,7 @@ class Creature(Entity):
         smallest = distance
         if distance <= self.senseRange:
           closestFood = food
-    return closestFood
+    self.closestFoodInRange = closestFood
 
   def updatePath(self):
     target = self.closestFoodInRange
@@ -73,16 +74,17 @@ class Creature(Entity):
       self.path = self.node
 
   def updateEating(self):
-    return
-
+    if self.closestFoodInRange != NULL:
+      if self.pos.distance_to(self.closestFoodInRange.pos) <= self.size:
+          foods.remove(self.closestFoodInRange)
+  
 
   def updateVelocity(self):
     self.vel = (self.path - self.pos).normalize()*self.speed*deltaTime
 
   def updatePosition(self):
     self.pos += self.vel
-
-
+  
 
 class Food(Entity):
   def __init__(self):
