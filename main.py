@@ -15,7 +15,7 @@ run = True
 backgroundColour = (0, 0, 0)
 
 #Constants
-foodAmount = 20
+foodAmount = 5
 creatureAmount = 3
 
 
@@ -38,7 +38,7 @@ class Creature(Entity):
   def __init__(self):
     super().__init__()
     self.speed = 150
-    self.senseRange = 600
+    self.senseRange = 60
     self.colour = (255,255,255)
     self.node = randomVector()
 
@@ -46,37 +46,32 @@ class Creature(Entity):
 
 
   def update(self):
-    self.closestFoodInRange = self.getClosestFoodInRange()
-    self.updatePath()
-    self.updateEating()
+    foodToMove = self.getClosestFoodInRange()
+    if foodToMove != NULL:
+      self.updatePath(foodToMove)
+      #self.updateEating(foodToMove)
+    else:
+      self.path = self.node
     self.updateVelocity()
     self.updatePosition()
 
   def getClosestFoodInRange(self):
-    closestFood = NULL
     smallest = math.inf
     for food in foods:
       distance = self.pos.distance_to(food.pos)
       if distance < smallest:
         smallest = distance
         if distance <= self.senseRange:
-          closestFood = food
-    return closestFood
+          return food
+    return NULL
 
-  def updatePath(self, ):
-    target = self.closestFoodInRange
-    if self.pos.distance_to(self.node) <= self.size:
-      self.node = randomVector()
-    if target != NULL:
-      self.path = target.pos
-    else:
-      self.path = self.node
-
-  def updateEating(self):
-    return
-
+  def updatePath(self, foodToMove):
+    self.path = foodToMove.pos
 
   def updateVelocity(self):
+    if self.pos.distance_to(self.node) <= self.size:
+      self.node = randomVector()
+      
     self.vel = (self.path - self.pos).normalize()*self.speed*deltaTime
 
   def updatePosition(self):
