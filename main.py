@@ -46,32 +46,37 @@ class Creature(Entity):
 
 
   def update(self):
-    foodToMove = self.getClosestFoodInRange()
-    if foodToMove != NULL:
-      self.updatePath(foodToMove)
-      #self.updateEating(foodToMove)
-    else:
-      self.path = self.node
+    self.closestFoodInRange = self.getClosestFoodInRange()
+    self.updatePath()
+    self.updateEating()
     self.updateVelocity()
     self.updatePosition()
 
   def getClosestFoodInRange(self):
+    closestFood = NULL
     smallest = math.inf
     for food in foods:
       distance = self.pos.distance_to(food.pos)
       if distance < smallest:
         smallest = distance
         if distance <= self.senseRange:
-          return food
-    return NULL
+          closestFood = food
+    return closestFood
 
-  def updatePath(self, foodToMove):
-    self.path = foodToMove.pos
-
-  def updateVelocity(self):
+  def updatePath(self):
+    target = self.closestFoodInRange
     if self.pos.distance_to(self.node) <= self.size:
       self.node = randomVector()
-      
+    if target != NULL:
+      self.path = target.pos
+    else:
+      self.path = self.node
+
+  def updateEating(self):
+    return
+
+
+  def updateVelocity(self):
     self.vel = (self.path - self.pos).normalize()*self.speed*deltaTime
 
   def updatePosition(self):
