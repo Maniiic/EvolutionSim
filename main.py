@@ -2,7 +2,7 @@
 
 from asyncio.windows_events import NULL
 from threading import Timer
-from tkinter import N
+
 import pygame
 import random
 import math
@@ -21,9 +21,13 @@ CREATE_FOOD = pygame.USEREVENT + 1
 #Constants
 foodAmount = 5
 creatureAmount = 3
+speedVariance = 10
+senseVariance = 10
+sizeVariance = 5
 
 #Variables
 i=0
+
 
 
 
@@ -42,10 +46,12 @@ class Entity:
 
 
 class Creature(Entity):
-  def __init__(self):
+  def __init__(self,pos,speed,sense,size,):
     super().__init__()
-    self.speed = 150
-    self.senseRange = 70
+    self.pos = randomVector()
+    self.speed = speed + random.randint(-speedVariance,speedVariance)
+    self.senseRange = sense + random.randint(-senseVariance,senseVariance)
+    self.size = size + random.randint(-sizeVariance,sizeVariance)/10
     self.colour = (255,255,255)
     self.node = randomVector()
 
@@ -81,6 +87,8 @@ class Creature(Entity):
     try:
       if self.pos.distance_to(self.closestTargetInRange.pos) <= self.size:
         targetList.remove(self.closestTargetInRange)
+        creatures.append(Creature(self.pos,self.speed,self.senseRange,self.size))
+        
     except:
       return
 
@@ -113,7 +121,7 @@ def randomVector():
 
 #Initial lists
 foods = [Food() for x in range(foodAmount)]
-creatures = [Creature() for x in range(creatureAmount)]
+creatures = [Creature(randomVector(),150,60,10) for x in range(creatureAmount)]
 
 
 #Main Loop
