@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import colorsys
 from threading import Timer
 
 
@@ -28,18 +29,21 @@ CREATE_FOOD = pygame.USEREVENT + 1
 i = 0
 
 class Entity:
-  def __init__(self):
+  def __init__(self, col, size):
     self.pos = randomVector()
+    self.col = col
+    self.size = size
 
   def draw(self):
-    pass
+    pygame.draw.circle(surface, self.col, self.pos, self.size)
 
   def update(self):
     pass
 
+
 class Consumer(Entity):
   def __init__(self,pos,speed,senseRange,size):
-    super().__init__()
+    super().__init__((255, 255, 255), size + random.randint(-8,8))
     self.pos = pos
     self.path = randomVector()
     self.energy = 100
@@ -47,14 +51,13 @@ class Consumer(Entity):
     self.speed = speed + random.randint(-10,10)
     self.senseRange = senseRange + random.randint(-8,8)
     self.eatRange = 20
-    self.size = size + random.randint(-8,8)
 
 
 
     print("speed: ",self.speed,"sense: ",self.senseRange,"size: ",self.size)
 
   def draw(self):
-    pygame.draw.circle(surface, (255, 255, 255), self.pos, self.size / 10)
+    pygame.draw.circle(surface, self.col, self.pos, self.size / 10)
 
   def update(self):
     self.updateVel()
@@ -114,20 +117,21 @@ class Consumer(Entity):
   def updatePosition(self):
     self.pos = self.pos + self.vel
 
-
   def updateEnergy(self):
     self.energy -= 0.25
     if self.energy <= 0:
       consumers.remove(self)
 
-  
 
 class Food(Entity):
   def __init__(self):
-    super().__init__()
+    super().__init__((255, 255, 0), 10)
+    self.hue = 0
 
-  def draw(self):
-    pygame.draw.circle(surface, (255, 255, 0), self.pos, 10)
+  def update(self):
+    self.hue = (self.hue + 0.01) % 1.0
+    r, g, b = colorsys.hsv_to_rgb(self.hue, 1, 1)
+    self.col  = (int(r * 255), int(g * 255), int(b * 255))
 
 def randomVector():
   return pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
