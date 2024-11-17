@@ -31,9 +31,11 @@ class Entity:
   def __init__(self):
     self.pos = randomVector()
 
-  def updatePos(self):
-    self.pos = self.pos + self.vel
+  def draw(self):
+    pass
 
+  def update(self):
+    pass
 
 class Consumer(Entity):
   def __init__(self,pos,speed,senseRange,size):
@@ -44,38 +46,49 @@ class Consumer(Entity):
     
     self.speed = speed + random.randint(-10,10)
     self.senseRange = senseRange + random.randint(-8,8)
+    self.eatRange = 20
     self.size = size + random.randint(-8,8)
+
+
 
     print("speed: ",self.speed,"sense: ",self.senseRange,"size: ",self.size)
 
   def draw(self):
     pygame.draw.circle(surface, (255, 255, 255), self.pos, self.size / 10)
+
+  def update(self):
+    self.updateVel()
+    self.updatePosition()
+    self.updateEating()
+    self.updateEnergy()
+
   def updateVel(self):
     smallest = math.inf
-    preyList = consumer.makePreyList()
+    preyList = self.makePreyList()
     for food in foods:
-      smallest = consumer.pathFinding(food,smallest)
+      smallest = self.pathFinding(food,smallest)
     for prey in preyList:
-      smallest = consumer.pathFinding(prey,smallest)
+      smallest = self.pathFinding(prey,smallest)
 
 
-    if ((self.pos.x + 20 > self.path.x) and (self.pos.x - 20 < self.path.x)) and ((self.pos.y + 20 > self.path.y) and (self.pos.y - 20 < self.path.y)):
-      self.path = pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
+    if self.pos.distance_to(self.path) < 20:
+      self.path = randomVector()
     self.vel = pygame.Vector2((self.path.x - self.pos.x, self.path.y - self.pos.y)).normalize()*self.speed*deltaTime
 
   
   def updateEating(self):
 
     for food in foods:
-      if (self.pos.x + 20 > food.pos.x) and (self.pos.x - 20 < food.pos.x) and (self.pos.y + 20 > food.pos.y) and (self.pos.y - 20 < food.pos.y):
+      if self.pos.distance_to(food.pos) < 20:
         foods.remove(food)
-        consumer.newConsumer()
+        self.newConsumer()
         
-    preyList = consumer.makePreyList()      
-    for prey in preyList:   
-      if (self.pos.x + 20 > prey.pos.x) and (self.pos.x - 20 < prey.pos.x) and (self.pos.y + 20 > prey.pos.y) and (self.pos.y - 20 < prey.pos.y):
+    preyList = self.makePreyList()
+    for prey in preyList:
+      distance = self.pos.distance_to(prey.pos)
+      if distance < self.size + self.eatRange:
         consumers.remove(prey)
-        consumer.newConsumer()
+        self.newConsumer()
         print("CANNIBALISM")
 
   def makePreyList(self): #Adds the creatures that are small enough to the list to be eaten
@@ -91,12 +104,15 @@ class Consumer(Entity):
       consumers.append(Consumer(self.pos,self.speed,self.senseRange,self.size))
   
   def pathFinding(self,food,smallest):
-    distance = ((self.pos.x - food.pos.x)**2 + (self.pos.y - food.pos.y)**2)**(1/2)
+    distance = self.pos.distance_to(food.pos)
     if distance < smallest:
       smallest = distance
     if distance < self.senseRange and distance == smallest:
       self.path = food.pos
     return smallest
+
+  def updatePosition(self):
+    self.pos = self.pos + self.vel
 
 
   def updateEnergy(self):
@@ -138,13 +154,7 @@ while run:
 
   for entity in entities:
     entity.draw()
-
-  for consumer in consumers:
-    # Update All
-    consumer.updateVel()
-    consumer.updatePos()
-    consumer.updateEating()
-    consumer.updateEnergy()
+    entity.update()
 
   pygame.display.update()
   clock.tick(60)
