@@ -18,6 +18,7 @@ class Button():
     self.textInput = textInput
     self.text = main_font.render(self.textInput, True, "white")
     self.textRect = self.text.get_rect(center=(self.xPos, self.yPos))
+    self.canClick = True
 
   def update(self, screen):
     pygame.draw.rect(screen, "dark gray", self.rect, 0, 5)
@@ -32,8 +33,12 @@ class Button():
     
   def check_click(self):
     leftClick = pygame.mouse.get_pressed()[0]
-    if self.check_hover() and leftClick:
-      return True
-    else:
-      return False
-      
+    if self.check_hover():
+      if leftClick:
+        if self.canClick:
+          self.canClick = False
+          return True
+        else:
+          return False
+      else:
+        self.canClick = True
