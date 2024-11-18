@@ -1,7 +1,7 @@
 
 
 from asyncio.windows_events import NULL
-from threading import Timer
+import sys
 
 import pygame
 import random
@@ -125,29 +125,32 @@ creatures = [Creature(randomVector(),150,60,10) for x in range(creatureAmount)]
 
 
 #Main Loop
+def main():
+  global i, run
+  pygame.time.set_timer(CREATE_FOOD,2500-i)
+  while run:
+    surface.fill(backgroundColour)
 
-pygame.time.set_timer(CREATE_FOOD,2500-i)
-while run:
-  surface.fill(backgroundColour)
+    for event in pygame.event.get():
+      #Close window
+      if event.type == pygame.QUIT:
+        pygame.quit()
+        sys.exit()
 
-  for event in pygame.event.get():
-    #Close window
-    if event.type == pygame.QUIT:
-      run = False
 
-    elif event.type == CREATE_FOOD:
-      foods.append(Food())
-      i+=10
-      pygame.time.set_timer(CREATE_FOOD,1000+i)
-  
-  for creature in creatures:
-    creature.draw()
-    creature.update()
+      elif event.type == CREATE_FOOD:
+        foods.append(Food())
+        i+=10
+        pygame.time.set_timer(CREATE_FOOD,1000+i)
     
-   
+    for creature in creatures:
+      creature.draw()
+      creature.update()
+      
+    
 
-  for food in foods:
-    food.draw()
+    for food in foods:
+      food.draw()
 
-  pygame.display.update()
-  clock.tick(60)
+    pygame.display.update()
+    clock.tick(60)
