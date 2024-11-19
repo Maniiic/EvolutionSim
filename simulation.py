@@ -1,156 +1,175 @@
 
-
-from asyncio.windows_events import NULL
 import sys
-
 import pygame
-import random
 import math
+import random
 
-
-#Variables for pygame window
-res = pygame.Vector2(816,459) #16:9
+# Variables for pygame window
+backgroundColour = (0, 0, 0)
+res = pygame.Vector2(816,459) # 16:9
 surface = pygame.display.set_mode(res)
 clock = pygame.time.Clock()
 deltaTime = clock.tick(60)/1000
-run = True
-backgroundColour = (0, 0, 0)
 
-CREATE_FOOD = pygame.USEREVENT + 1
-
-#Constants
-foodAmount = 5
-creatureAmount = 3
+# Constants
+foodAmount = 0
+consumerAmount = 10
 speedVariance = 10
 senseVariance = 10
-sizeVariance = 5
+sizeVariance = 1
+reproductionChance = 2 # 1 / reproductionChance
 
-#Variables
-i=0
+# Pygame event
+CREATE_FOOD = pygame.USEREVENT + 1
+
+# Variables
+foodReduction = 0
 
 
-
-
-
-#Food and creatures will inherit from entity class
 class Entity:
-  def __init__(self):
-    #Spawn with a random position on the screen, 
+  def __init__(self, col, size):
     self.pos = randomVector()
-    self.speed = 0
-    self.size = 10
-    
-  
+    self.col = col
+    self.size = size
+
   def draw(self):
-    pygame.draw.circle(surface,self.colour,self.pos,self.size)
-
-
-class Creature(Entity):
-  def __init__(self,pos,speed,sense,size,):
-    super().__init__()
-    self.pos = randomVector()
-    self.speed = speed + random.randint(-speedVariance,speedVariance)
-    self.senseRange = sense + random.randint(-senseVariance,senseVariance)
-    self.size = size + random.randint(-sizeVariance,sizeVariance)/10
-    self.colour = (255,255,255)
-    self.node = randomVector()
-
+    pygame.draw.circle(surface, self.col, self.pos, self.size)
 
   def update(self):
+    pass
+
+
+class Consumer(Entity):
+  def __init__(self,pos,speed,senseRange,size):
+    super().__init__((255, 255, 255), size + random.randint(-sizeVariance,sizeVariance)) # Attributes shared by classes
+    self.pos = pos
+    self.path = randomVector()
+    self.energy = 100
     
-    self.createPreyList()
-    self.updateClosestTargetInRange(foods+self.preyList)
-    self.updatePath()
-    self.updateEating(foods)
-    self.updateEating(self.preyList)
-    self.updateVelocity()
+    # Initial traits
+    self.speed = speed + random.randint(-speedVariance, speedVariance)
+    self.senseRange = senseRange + random.randint(-senseVariance, senseVariance)
+
+    print("speed: ",self.speed,"sense: ",self.senseRange,"size: ",self.size)
+
+  def draw(self):
+    # Draws the objects on the pygame screen
+    pygame.draw.circle(surface, self.col, self.pos, self.size)
+
+  def update(self):
+    self.updateVel()
     self.updatePosition()
+    self.updateEating()
+    self.updateEnergy()
 
-  def createPreyList(self):
-    self.preyList = []
-    for creature in creatures:
-      if self.size > 1.25 * creature.size:
-        self.preyList.append(creature)
-
-  def updateClosestTargetInRange(self, possibleTargetsList):
-    closestTarget = NULL
+  def updateVel(self):
     smallest = math.inf
-    for target in possibleTargetsList:
-      distance = self.pos.distance_to(target.pos)
-      if distance < smallest:
-        smallest = distance
-        if distance <= self.senseRange:
-          closestTarget = target
-    self.closestTargetInRange = closestTarget
+    preyList = self.makePreyList()
+    # Check for closest food/prey
+    for food in foods:
+      smallest = self.pathFinding(food,smallest)
+    for prey in preyList:
+      smallest = self.pathFinding(prey,smallest)
 
-  def updateEating(self, targetList):
-    try:
-      if self.pos.distance_to(self.closestTargetInRange.pos) <= self.size:
-        targetList.remove(self.closestTargetInRange)
-        creatures.append(Creature(self.pos,self.speed,self.senseRange,self.size))
+    # Check if creature has reached its destination
+    if self.pos.distance_to(self.path) <= self.size:
+      self.path = randomVector()
+    
+    # Calculate velocity
+    self.vel = pygame.Vector2(self.path - self.pos).normalize()*self.speed*deltaTime
+
+  def updateEating(self):
+    # Check if food or prey can be eaten
+    for food in foods:
+      if self.pos.distance_to(food.pos) <= self.size:
+        foods.remove(food)
+        self.newConsumer()
         
-    except:
-      return
+    preyList = self.makePreyList()
+    for prey in preyList:
+      if self.pos.distance_to(prey.pos) <= self.size:
+        consumers.remove(prey)
+        self.newConsumer()
+        print("CANNIBALISM")
 
-  def updatePath(self):
-    target = self.closestTargetInRange
-    if self.pos.distance_to(self.node) <= self.size:
-      self.node = randomVector()
-    if target != NULL:
+  def makePreyList(self): 
+    # Adds the creatures that are small enough to the list to be eaten
+    preyList = []
+    for consumer in consumers:
+      if self.size > 1.25 * consumer.size:
+        preyList.append(consumer)
+    return preyList
+      
+  def newConsumer(self):
+    # Creates a new creature
+    self.energy += 50
+    if random.randint(1,reproductionChance) == 1:
+      consumers.append(Consumer(self.pos, self.speed, self.senseRange, self.size))
+  
+  def pathFinding(self, target, smallest):
+    # Sets the path to the closest target
+    distance = self.pos.distance_to(target.pos)
+    if distance < smallest:
+      smallest = distance
+    if distance <= self.senseRange and distance == smallest:
       self.path = target.pos
-    else:
-      self.path = self.node
-
-  def updateVelocity(self):
-    self.vel = (self.path - self.pos).normalize()*self.speed*deltaTime
+    return smallest
 
   def updatePosition(self):
-    self.pos += self.vel
-  
+    # Changes the position based on the current velocity
+    self.pos = self.pos + self.vel
+
+  def updateEnergy(self):
+    # Decrease energy over time
+    self.energy -= 0.25
+    # Kills creature
+    if self.energy <= 0:
+      consumers.remove(self)
+
 
 class Food(Entity):
   def __init__(self):
-    super().__init__() 
-    self.colour = (255,255,0)
-  
+    super().__init__((255, 255, 0), 10)
+
 
 def randomVector():
+  # Generates a random vector
   return pygame.Vector2(random.randint(50, int(res.x) - 50), random.randint(50, int(res.y - 50)))
 
-
-
-#Initial lists
+# Creates the inital list for creatures and food
 foods = [Food() for x in range(foodAmount)]
-creatures = [Creature(randomVector(),150,60,10) for x in range(creatureAmount)]
+consumers = [Consumer(randomVector(),150,60,7) for x in range(consumerAmount)]
 
+# Starts the food generation
+pygame.time.set_timer(CREATE_FOOD, 2500 - foodReduction)
 
-#Main Loop
 def main():
-  global i, run
-  pygame.time.set_timer(CREATE_FOOD,2500-i)
-  while run:
+  global foodReduction
+  
+  while True:
     surface.fill(backgroundColour)
 
     for event in pygame.event.get():
-      #Close window
+      # Closes the window
       if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
 
-
-      elif event.type == CREATE_FOOD:
+      # Continues generating food every so often
+      if event.type == CREATE_FOOD:
         foods.append(Food())
-        i+=10
-        pygame.time.set_timer(CREATE_FOOD,1000+i)
-    
-    for creature in creatures:
-      creature.draw()
-      creature.update()
-      
-    
+        foodReduction += 10
+        pygame.time.set_timer(CREATE_FOOD, 1000 + foodReduction)
 
-    for food in foods:
-      food.draw()
+    # Combines the list of entities
+    entities = foods + consumers
+
+    # Draws each entity
+    for entity in entities:
+      entity.draw()
+      entity.update()
 
     pygame.display.update()
     clock.tick(60)
+
+

@@ -5,7 +5,7 @@ import sys
 import gui
 import simulation
 
-#Variables for pygame window
+# Variables for pygame window
 res = pygame.Vector2(816,459) #16:9
 surface = pygame.display.set_mode(res)
 clock = pygame.time.Clock()
@@ -13,22 +13,34 @@ deltaTime = clock.tick(60)/1000
 run = True
 backgroundColour = (0, 0, 0)
 
-#Pygame events
+# Buttons
+startButton = gui.Button(res.x/2, res.y/4, "Start Simulation")
+quitButton = gui.Button(res.x/2, res.y/2, "Quit")
 
-button1 = gui.Button(100,75,100,50,"Start Simulation")
+buttons = [startButton, quitButton]
+
 
 def main_menu():
   pygame.display.set_caption("Main Menu")
 
   while True:
+
     surface.fill(backgroundColour)
-    
-    button1.update(surface)
-    if button1.check_click():
+
+    for button in buttons:
+      button.update(surface)
+
+    # Functions for each button
+    if startButton.check_click():
       simulation.main()
+    
+    if quitButton.check_click():
+      pygame.quit()
+      sys.exit()
+
 
     for event in pygame.event.get():
-      #Close window
+      # Close window
       if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
