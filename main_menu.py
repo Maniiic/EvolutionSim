@@ -24,8 +24,8 @@ def main_menu():
   pygame.display.set_caption("Main Menu")
 
   while True:
-
     surface.fill(backgroundColour)
+    buttons = [startButton, quitButton]
 
     for button in buttons:
       button.update(surface)
@@ -37,7 +37,6 @@ def main_menu():
     if quitButton.check_click():
       pygame.quit()
       sys.exit()
-
 
     for event in pygame.event.get():
       # Close window
