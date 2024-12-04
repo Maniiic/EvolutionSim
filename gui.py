@@ -82,3 +82,10 @@ class Slider():
     # Draw the slider when it is updated
     pygame.draw.rect(screen, "dark gray", self.rectTrack)
     pygame.draw.rect(screen, "blue", self.rectThumb)
+
+  def move(self):
+    mousePos = pygame.mouse.get_pos()
+    leftClick = pygame.mouse.get_pressed()[0]
+    if self.rectTrack.collidepoint(mousePos) and leftClick:
+      self.rectThumb.centerx = mousePos[0]
+      
